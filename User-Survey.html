@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>강사 교육 만족도 설문조사</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      --p: #5b5bd6;
+      --pl: #7b7de8;
+      --pbg: #f0f0ff;
+      --ok: #10b981;
+      --wn: #f59e0b;
+      --dn: #ef4444;
+      --bg: #f0f4ff;
+      --cd: #fff;
+      --bd: #e2e8f0;
+      --bd2: #f1f5f9;
+      --tx: #1e293b;
+      --t2: #64748b;
+      --t3: #94a3b8;
+      --fn: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    }
+    body {
+      font-family: var(--fn);
+      background: var(--bg);
+      color: var(--tx);
+      min-height: 100vh;
+      padding-bottom: 90px;
+    }
+    /* ─ 헤더 ─ */
+    .hdr {
+      background: #fff;
+      border-bottom: 1px solid var(--bd);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, .06);
+    }
+    .hdr-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+    }
+    .hdr-top h1 {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--tx);
+    }
+    .anon-tag {
+      background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+      color: #065f46;
+      border: 1px solid #6ee7b7;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .hdr-meta {
+      font-size: 11px;
+      color: var(--t2);
+      padding: 0 18px 9px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #f1f5f9;
+      border-radius: 5px;
+      padding: 2px 7px;
+    }
+    /* 진행바 */
+    .prog-wrap {
+      padding: 0 18px 12px;
+    }
+    .prog-bg {
+      height: 7px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--p), var(--ok));
+      border-radius: 10px;
+      transition: width .4s ease;
+    }
+    .prog-info {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+    .prog-lbl {
+      font-size: 10px;
+      color: var(--t2);
+    }
+    /* ─ 선택 화면 (URL 파라미터 없을 때) ─ */
+    .select-wrap {
+      max-width: 500px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    .sel-card {
+      background: var(--cd);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(91, 91, 214, .12);
+      border: 1px solid rgba(91, 91, 214, .1);
+    }
+    .sel-top {
+      background: linear-gradient(135deg, var(--p), #6d28d9);
+      padding: 28px;
+      text-align: center;
+    }
+    .sel-top h2 {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .sel-top p {
+      color: rgba(255, 255, 255, .75);
+      font-size: 12px;
+    }
+    .sel-body {
+      padding: 24px;
+    }
+    .sel-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--tx);
+      margin-bottom: 14px;
+    }
+    .edu-list-container {
+      max-height: 320px;
+      overflow-y: auto;
+      margin-bottom: 14px;
+      padding-right: 4px;
+    }
+    .edu-item {
+      background: #f8fafc;
+      border: 2px solid var(--bd);
+      border-radius: 10px;
+      padding: 12px 14px;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: all .2s;
+      position: relative;
+    }
+    .edu-item:hover {
+      border-color: var(--p);
+      background: var(--pbg);
+    }
+    .edu-item.sel {
+      border-color: var(--p);
+      background: var(--pbg);
+      box-shadow: 0 0 0 3px rgba(91, 91, 214, .12);
+    }
+    .edu-item.sel::after {
+      content: '✓';
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      width: 20px;
+      height: 20px;
+      background: var(--p);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .edu-t {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      padding-right: 24px;
+    }
+    .edu-m {
+      font-size: 11px;
+      color: var(--t2);
+      line-height: 1.4;
+    }
+    .edu-badge {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(91, 91, 214, .1);
+      color: var(--p);
+      border: 1px solid rgba(91, 91, 214, .18);
+    }
+    .fg {
+      margin-bottom: 14px;
+    }
+    .fl {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--t2);
+      margin-bottom: 4px;
+    }
+    .fc {
+      width: 100%;
+      padding: 9px 12px;
+      background: #f8fafc;
+      border: 1.5px solid var(--bd);
+      border-radius: 8px;
+      color: var(--tx);
+      font-size: 13px;
+      font-family: var(--fn);
+      transition: all .15s;
+    }
+    .fc:focus {
+      outline: none;
+      border-color: var(--p);
+    }
+    .start-btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--p), #6d28d9);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 4px 16px rgba(91, 91, 214, .3);
+      font-family: var(--fn);
+      margin-top: 6px;
+    }
+    .start-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(91, 91, 214, .4);
+    }
+    .start-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .anon-p {
+      margin-top: 12px;
+      padding: 9px 12px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      font-size: 11px;
+      color: #166534;
+      line-height: 1.5;
+    }
+    /* ─ 본문 ─ */
+    .body {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 18px 14px;
+    }
+    /* 카테고리 */
+    .cat-hd {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--p);
+      padding: 7px 11px;
+      margin: 22px 0 9px;
+      background: rgba(91, 91, 214, .06);
+      border-radius: 7px;
+      border-left: 3px solid var(--p);
+    }
+    /* 문항 카드 */
+    .qcard {
+      background: var(--cd);
+      border: 1.5px solid var(--bd);
+      border-radius: 13px;
+      padding: 18px;
+      margin-bottom: 9px;
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .qcard::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--bd2);
+      transition: .2s;
+    }
+    .qcard.answered::before {
+      background: var(--ok);
+    }
+    .qcard.err {
+      border-color: rgba(239, 68, 68, .4);
+      animation: shake .3s;
+    }
+    .qcard.err::before {
+      background: var(--dn);
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      30% { transform: translateX(-4px); }
+      70% { transform: translateX(4px); }
+    }
+    .q-meta {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 9px;
+    }
+    .q-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--p), var(--pl));
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .q-tbadge {
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .ch {
+      background: rgba(91, 91, 214, .1);
+      color: var(--p);
+      border: 1px solid rgba(91, 91, 214, .2);
+    }
+    .tx {
+      background: rgba(14, 165, 233, .08);
+      color: #0284c7;
+      border: 1px solid rgba(14, 165, 233, .2);
+    }
+    .mt {
+      background: rgba(16, 185, 129, .08);
+      color: #065f46;
+      border: 1px solid rgba(16, 185, 129, .2);
+    }
+    .q-hint {
+      font-size: 10px;
+      color: var(--t3);
+      margin-left: auto;
+    }
+    .q-text {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--tx);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+    /* 객관식 옵션 */
+    .opts {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 13px;
+      border: 1.5px solid var(--bd);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
+    }
+    .opt:hover {
+      border-color: var(--p);
+      background: #f8f8ff;
+    }
+    .opt.sel {
+      border-color: var(--p);
+      background: linear-gradient(135deg, #f0f0ff, #e8eeff);
+    }
+    .opt-radio {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--bd);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+    .opt.sel .opt-radio {
+      border-color: var(--p);
+      background: var(--p);
+    }
+    .opt.sel .opt-radio::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: #fff;
+      border-radius: 50%;
+    }
+    .opt-lbl {
+      font-size: 12px;
+      color: var(--tx);
+      flex: 1;
+      font-weight: 500;
+    }
+    .opt-sc {
+      font-size: 10px;
+      color: var(--t3);
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    /* 복수선택 */
+    .multi-opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 13px;
+      border: 1.5px solid var(--bd);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
+      margin-bottom: 5px;
+    }
+    .multi-opt:hover {
+      border-color: var(--p);
+      background: #f8f8ff;
+    }
+    .multi-opt.sel {
+      border-color: var(--p);
+      background: linear-gradient(135deg, #f0f0ff, #e8eeff);
+    }
+    .opt-chk {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 2px solid var(--bd);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+      font-size: 10px;
+    }
+    .multi-opt.sel .opt-chk {
+      border-color: var(--p);
+      background: var(--p);
+      color: #fff;
+    }
+    /* 점수 세그먼트 바 */
+    .sc-segs {
+      display: flex;
+      gap: 3px;
+      margin-top: 9px;
+    }
+    .sc-seg {
+      flex: 1;
+      height: 4px;
+      border-radius: 3px;
+      background: #f1f5f9;
+      transition: background .2s;
+    }
+    .sc-seg.lit {
+      background: linear-gradient(90deg, var(--p), var(--pl));
+    }
+    /* 주관식 */
+    .stxt {
+      width: 100%;
+      padding: 10px 13px;
+      background: #f8fafc;
+      border: 1.5px solid var(--bd);
+      border-radius: 9px;
+      color: var(--tx);
+      font-size: 12px;
+      font-family: var(--fn);
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.6;
+      transition: all .15s;
+    }
+    .stxt:focus {
+      outline: none;
+      border-color: var(--p);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(91, 91, 214, .09);
+    }
+    .char-cnt {
+      font-size: 10px;
+      color: var(--t3);
+      text-align: right;
+      margin-top: 3px;
+    }
+    /* 주관식 점수 평가 */
+    .sc-row {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--bd);
+    }
+    .sc-lbl {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--t2);
+      margin-bottom: 7px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sc-opts {
+      display: flex;
+      gap: 5px;
+    }
+    .sc-opt {
+      flex: 1;
+      padding: 7px 3px;
+      text-align: center;
+      border: 1.5px solid var(--bd);
+      border-radius: 8px;
+      font-size: 10px;
+      cursor: pointer;
+      color: var(--t2);
+      transition: all .15s;
+      background: #f8fafc;
+    }
+    .sc-opt:hover {
+      border-color: var(--p);
+      background: var(--pbg);
+      color: var(--p);
+    }
+    .sc-opt.sel {
+      border-color: var(--p);
+      background: var(--pbg);
+      color: var(--p);
+      font-weight: 800;
+    }
+    .sc-opt strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 1px;
+      margin-top: 1px;
+    }
+    /* 하단 바 */
+    .sub-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 2px solid var(--bd);
+      padding: 11px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, .07);
+      z-index: 100;
+    }
+    .sb-l {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .sb-cnt {
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .sb-hint {
+      font-size: 10px;
+      color: var(--t3);
+    }
+    .sub-btn {
+      padding: 11px 26px;
+      background: linear-gradient(135deg, var(--p), #6d28d9);
+      color: #fff;
+      border: none;
+      border-radius: 11px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: 0 4px 14px rgba(91, 91, 214, .3);
+      font-family: var(--fn);
+    }
+    .sub-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(91, 91, 214, .4);
+    }
+    .sub-btn:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    /* 완료 화면 */
+    .comp {
+      max-width: 460px;
+      margin: 60px auto;
+      text-align: center;
+      padding: 22px;
+    }
+    .comp-ico {
+      font-size: 68px;
+      margin-bottom: 16px;
+      animation: pop .5s ease;
+    }
+    @keyframes pop {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .comp h2 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--tx);
+      margin-bottom: 8px;
+    }
+    .comp p {
+      font-size: 13px;
+      color: var(--t2);
+      line-height: 1.7;
+      margin-bottom: 22px;
+    }
+    .score-box {
+      background: linear-gradient(135deg, var(--p), #6d28d9);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 8px 28px rgba(91, 91, 214, .35);
+    }
+    .sc-num {
+      font-size: 54px;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+    }
+    .sc-unit {
+      font-size: 18px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, .8);
+    }
+    .sc-lbl2 {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .65);
+      margin-top: 4px;
+    }
+    .home-btn {
+      display: block;
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--p), #6d28d9);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(91, 91, 214, .3);
+      font-family: var(--fn);
+    }
+    /* 로딩/에러 */
+    .center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .spin {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(91, 91, 214, .15);
+      border-top-color: var(--p);
+      border-radius: 50%;
+      animation: sp .7s linear infinite;
+    }
+    @keyframes sp {
+      to { transform: rotate(360deg); }
+    }
+    .err-box {
+      background: #fff;
+      border: 1px solid var(--bd);
+      border-radius: 14px;
+      padding: 28px 32px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
+    }
+    .err-ico {
+      font-size: 44px;
+      margin-bottom: 12px;
+    }
+    .err-ttl {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--tx);
+      margin-bottom: 6px;
+    }
+    .err-msg {
+      font-size: 12px;
+      color: var(--t2);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .err-btn {
+      padding: 9px 20px;
+      background: var(--p);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--fn);
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="loading" class="center">
+    <div class="spin"></div>
+    <p style="font-size: 13px; color: var(--t2)">데이터를 로드하는 중...</p>
+  </div>
+
+  <div id="error-screen" class="hidden center">
+    <div class="err-box">
+      <div class="err-ico">😥</div>
+      <div class="err-ttl" id="err-ttl">설문지를 찾을 수 없습니다</div>
+      <div class="err-msg" id="err-msg">링크가 잘못되었거나 설문지가 존재하지 않습니다.</div>
+    </div>
+  </div>
+
+  <div id="select-screen" class="hidden">
+    <div class="select-wrap">
+      <div class="sel-card">
+        <div class="sel-top">
+          <h2>강사 교육 만족도 설문조사</h2>
+          <p>참여하실 교육 과정을 정확하게 선택해 주세요.</p>
+        </div>
+        <div class="sel-body">
+          <div class="sel-title">📌 진행 중인 교육 만족도 평가 목록</div>
+          <div class="edu-list-container" id="edu-list">
+            </div>
+          <button id="start-btn" class="start-btn" disabled onclick="startSurvey()">설문 시작하기 ✓</button>
+          <div class="anon-p">🔒 본 만족도 조사는 익명으로 안전하게 보장되며, 제출하신 응답 데이터는 오직 강사 품질 향상을 위한 분석 지표로만 소중하게 활용됩니다.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="survey-screen" class="hidden">
+    <div class="hdr">
+      <div class="hdr-top">
+        <h1 id="hdr-title">설문조사</h1>
+        <span class="anon-tag">🔒 익명 설문</span>
+      </div>
+      <div class="hdr-meta" id="hdr-meta"></div>
+      <div class="prog-wrap">
+        <div class="prog-bg"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+        <div class="prog-info">
+          <span class="prog-lbl" id="prog-lbl">0 / 0 필수 문항 완료</span>
+          <span class="prog-lbl" id="prog-pct">0%</span>
+        </div>
+      </div>
+    </div>
+    <div class="body" id="q-body"></div>
+  </div>
+
+  <div id="complete" class="hidden">
+    <div class="comp">
+      <div class="comp-ico">🎉</div>
+      <h2>설문 제출 완료!</h2>
+      <p>소중한 의견을 남겨주셔서 감사합니다.<br>강사 교육 품질 향상에 적극 반영하겠습니다.</p>
+      <div class="score-box">
+        <div class="sc-num" id="my-score">-<span class="sc-unit">점</span></div>
+        <div class="sc-lbl2">내 응답 기준 환산 점수 (참고용)</div>
+      </div>
+      <button class="home-btn" onclick="location.reload()">← 메인으로 돌아가기</button>
+    </div>
+  </div>
+
+  <div class="sub-bar" id="sub-bar" style="display: none">
+    <div class="sb-l">
+      <div class="sb-cnt"><span id="ans-cnt" style="color: var(--p)">0</span> / <span id="tot-cnt">0</span> 필수 완료</div>
+      <div class="sb-hint">객관식·복수선택 항목은 필수 응답입니다</div>
+    </div>
+    <button class="sub-btn" id="sub-btn" onclick="doSubmit()" disabled>제출하기 ✓</button>
+  </div>
+
+  <script>
+    // ═══ CONFIG ═══
+    const SURL = 'https://koozkqdpmzuanzpcotsv.supabase.co';
+    const SKEY = 'sb_publishable_tgw1uLAyJZaVgzfH7lTYAA_gLPst_GA';
+    const sb = window.supabase.createClient(SURL, SKEY);
+    
+    let tpl = null;
+    let answers = {};
+    let templatesCache = [];
+    let selectedTemplateId = null;
+
+    // ═══ INIT ═══
+    window.addEventListener('load', async () => {
+      const params = new URLSearchParams(window.location.search);
+      const templateId = params.get('id');
+      
+      if (templateId) {
+        // [경로 A] URL 파라미터 id가 있는 경우 -> 다이렉트 설문 진입
+        await loadDirectSurvey(templateId);
+      } else {
+        // [경로 B] 파라미터가 없는 독립형 호출 -> 전체 활성 설문 리스트 로드
+        await loadActiveSurveysList();
+      }
+    });
+
+    // 특정 ID 설문 직접 로드
+    async function loadDirectSurvey(templateId) {
+      try {
+        const { data, error } = await sb.from('survey_templates')
+          .select('*, instructors(name)')
+          .eq('id', templateId)
+          .eq('is_active', true)
+          .single();
+
+        if (error || !data) {
+          showError('설문지를 찾을 수 없습니다', '해당 ID의 설문지가 존재하지 않거나 비활성화 상태입니다.<br>관리자에게 문의해 주세요.');
+          return;
+        }
+        tpl = data;
+        document.getElementById('loading').classList.add('hidden');
+        render();
+      } catch (e) {
+        showError('오류가 발생했습니다', '서버 연결에 실패했습니다.<br>' + e.message);
+      }
+    }
+
+    // 전체 활성화 설문지 목록 조회 및 렌더링
+    async function loadActiveSurveysList() {
+      try {
+        const { data, error } = await sb.from('survey_templates')
+          .select('*, instructors(name)')
+          .eq('is_active', true)
+          .order('education_date', { ascending: false });
+
+        document.getElementById('loading').classList.add('hidden');
+
+        if (error) {
+          showError('목록을 불러오지 못했습니다', '데이터베이스 조회 중 오류가 발생했습니다.<br>' + error.message);
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          showError('진행 중인 설문이 없습니다', '현재 참여할 수 있는 활성화된 교육 만족도 설문조사가 없습니다.<br>관리자에게 문의해 주세요.');
+          return;
+        }
+
+        templatesCache = data;
+        const listEl = document.getElementById('edu-list');
+        
+        listEl.innerHTML = data.map(t => {
+          const courseName = t.course_type === 'Custom' ? t.custom_course_name : t.course_type;
+          const eduDate = new Date(t.education_date).toLocaleDateString('ko-KR');
+          return `
+            <div class="edu-item" id="edu_${t.id}" onclick="selectTemplate('${t.id}')">
+              <div class="edu-t">${t.title}</div>
+              <div class="edu-m">🏢 고객사: ${t.client_company} | 👤 강사: ${t.instructors?.name || '-'} | 📅 일자: ${eduDate}</div>
+              <span class="edu-badge">${courseName}</span>
+            </div>
+          `;
+        }).join('');
+
+        document.getElementById('select-screen').classList.remove('hidden');
+      } catch (e) {
+        showError('오류가 발생했습니다', '데이터 조회 과정에서 예상치 못한 오류가 발생했습니다.<br>' + e.message);
+      }
+    }
+
+    // 목록 아이템 선택 처리
+    function selectTemplate(id) {
+      selectedTemplateId = id;
+      document.querySelectorAll('.edu-item').forEach(el => el.classList.remove('sel'));
+      document.getElementById('edu_' + id)?.classList.add('sel');
+      document.getElementById('start-btn').disabled = false;
+    }
+
+    // 선택 완료 후 독립 설문 시작
+    function startSurvey() {
+      if (!selectedTemplateId) return;
+      tpl = templatesCache.find(x => x.id === selectedTemplateId);
+      if (!tpl) return;
+
+      document.getElementById('select-screen').classList.add('hidden');
+      render();
+    }
+
+    function showError(title, msg) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('select-screen').classList.add('hidden');
+      document.getElementById('survey-screen').classList.add('hidden');
+      document.getElementById('err-ttl').textContent = title;
+      document.getElementById('err-msg').innerHTML = msg;
+      document.getElementById('error-screen').classList.remove('hidden');
+    }
+
+    // ═══ 설문 폼 화면 렌더링 ═══
+    function render() {
+      document.getElementById('survey-screen').classList.remove('hidden');
+      document.getElementById('sub-bar').style.display = 'flex';
+      document.getElementById('hdr-title').textContent = tpl.title;
+      document.getElementById('hdr-meta').innerHTML =
+        '<span class="meta-chip">🏢 ' + tpl.client_company + '</span>' +
+        '<span class="meta-chip">👤 강사: ' + (tpl.instructors?.name || '-') + '</span>' +
+        '<span class="meta-chip">📅 ' + new Date(tpl.education_date).toLocaleDateString('ko-KR') + '</span>';
+
+      const qs = tpl.questions || [];
+      const req = qs.filter(q => q.type === 'score' || (q.type === 'choice' && q.is_score_item) || q.type === 'multi');
+      document.getElementById('tot-cnt').textContent = req.length;
+      
+      const body = document.getElementById('q-body');
+      body.innerHTML = ''; // 초기화
+      let lastCat = '';
+
+      qs.forEach((q, i) => {
+        if (q.category && q.category !== lastCat) {
+          const d = document.createElement('div');
+          d.className = 'cat-hd';
+          d.textContent = '📌 ' + q.category;
+          body.appendChild(d);
+          lastCat = q.category;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'qcard';
+        card.id = 'c' + q.id;
+
+        if (q.type === 'score') {
+          const opts = q.options || ['매우 만족', '만족', '보통', '불만족', '매우 불만족'];
+          const smap = q.score_map || [5, 4, 3, 2, 1];
+          card.innerHTML =
+            '<div class="q-meta"><span class="q-num">' + (i + 1) + '</span>' +
+            '<span class="q-tbadge ch">객관식</span>' +
+            '<span class="q-hint">5점 척도 · 필수</span></div>' +
+            '<div class="q-text">' + q.question + '</div>' +
+            '<div class="opts">' +
+            opts.map((opt, oi) =>
+              '<div class="opt" id="o' + q.id + '_' + oi + '" onclick="pickOpt(' + q.id + ',' + oi + ')">' +
+              '<div class="opt-radio"></div>' +
+              '<span class="opt-lbl">' + opt + '</span>' +
+              '<span class="opt-sc">' + smap[oi] + '점</span>' +
+              '</div>'
+            ).join('') +
+            '</div>' +
+            '<div class="sc-segs">' +
+            opts.map((_, si) => '<div class="sc-seg" id="ss' + q.id + '_' + si + '"></div>').join('') +
+            '</div>';
+          answers[q.id] = undefined;
+
+        } else if (q.type === 'choice') {
+          const opts = q.options || ['예', '아니요'];
+          card.innerHTML =
+            '<div class="q-meta"><span class="q-num">' + (i + 1) + '</span>' +
+            '<span class="q-tbadge ch">객관식</span>' +
+            (q.is_score_item ? '<span class="q-hint">· 필수</span>' : '<span class="q-hint">선택 응답</span>') +
+            '</div>' +
+            '<div class="q-text">' + q.question + '</div>' +
+            '<div class="opts">' +
+            opts.map((opt, oi) =>
+              '<div class="opt" id="o' + q.id + '_' + oi + '" onclick="pickOpt(' + q.id + ',' + oi + ')">' +
+              '<div class="opt-radio"></div>' +
+              '<span class="opt-lbl">' + opt + '</span>' +
+              '</div>'
+            ).join('') +
+            '</div>';
+          if (q.is_score_item) answers[q.id] = undefined;
+          else answers[q.id] = null;
+
+        } else if (q.type === 'multi') {
+          const opts = q.options || [];
+          card.innerHTML =
+            '<div class="q-meta"><span class="q-num">' + (i + 1) + '</span>' +
+            '<span class="q-tbadge mt">복수선택</span>' +
+            '<span class="q-hint">복수 선택 가능 · 필수</span></div>' +
+            '<div class="q-text">' + q.question + '</div>' +
+            opts.map((opt, oi) =>
+              '<div class="multi-opt" id="mo' + q.id + '_' + oi + '" onclick="toggleMulti(' + q.id + ',\'' + opt.replace(/'/g, "\\'") + '\',' + oi + ')">' +
+              '<div class="opt-chk"></div>' +
+              '<span class="opt-lbl">' + opt + '</span>' +
+              '</div>'
+            ).join('');
+          answers[q.id] = [];
+
+        } else {
+          card.innerHTML =
+            '<div class="q-meta"><span class="q-num">' + (i + 1) + '</span>' +
+            '<span class="q-tbadge tx">주관식</span>' +
+            '<span class="q-hint">선택 응답</span></div>' +
+            '<div class="q-text">' + q.question + '</div>' +
+            '<textarea class="stxt" id="tx' + q.id + '" maxlength="500" placeholder="의견을 자유롭게 작성해 주세요..." oninput="onTxt(' + q.id + ',this)"></textarea>' +
+            '<div class="char-cnt" id="cc' + q.id + '">0 / 500자</div>' +
+            (q.is_score_item ?
+              '<div class="sc-row"><div class="sc-lbl">⭐ 해당 항목 만족도 점수 <span style="color:var(--t3);font-weight:400">(선택)</span></div>' +
+              '<div class="sc-opts" id="sco' + q.id + '">' +
+              '<div class="sc-opt sel" onclick="pickTxtSc(' + q.id + ',3,this)"><strong>3</strong>보통</div>' +
+              '<div class="sc-opt" onclick="pickTxtSc(' + q.id + ',5,this)"><strong>5</strong>매우 만족</div>' +
+              '<div class="sc-opt" onclick="pickTxtSc(' + q.id + ',4,this)"><strong>4</strong>만족</div>' +
+              '<div class="sc-opt" onclick="pickTxtSc(' + q.id + ',2,this)"><strong>2</strong>미흡</div>' +
+              '<div class="sc-opt" onclick="pickTxtSc(' + q.id + ',1,this)"><strong>1</strong>매우 미흡</div>' +
+              '</div></div>' : '');
+          answers[q.id] = { text: '', score: 3 };
+        }
+        body.appendChild(card);
+      });
+      updateProg();
+    }
+
+    // ═══ 응답 처리 로직 ═══
+    function pickOpt(qid, oi) {
+      const q = tpl.questions.find(x => x.id === qid);
+      if (!q) return;
+      const cnt = (q.options || []).length;
+      for (let i = 0; i < cnt; i++) document.getElementById('o' + qid + '_' + i)?.classList.remove('sel');
+      document.getElementById('o' + qid + '_' + oi).classList.add('sel');
+      
+      if (q.type === 'score') {
+        for (let i = 0; i < cnt; i++) {
+          const s = document.getElementById('ss' + qid + '_' + i);
+          if (s) s.classList.toggle('lit', i <= oi);
+        }
+      }
+      answers[qid] = oi;
+      document.getElementById('c' + qid).classList.add('answered');
+      document.getElementById('c' + qid).classList.remove('err');
+      updateProg();
+    }
+
+    function toggleMulti(qid, opt, oi) {
+      const el = document.getElementById('mo' + qid + '_' + oi);
+      if (!el) return;
+      if (!Array.isArray(answers[qid])) answers[qid] = [];
+      const idx = answers[qid].indexOf(opt);
+      if (idx >= 0) {
+        answers[qid].splice(idx, 1);
+        el.classList.remove('sel');
+        el.querySelector('.opt-chk').textContent = '';
+      } else {
+        answers[qid].push(opt);
+        el.classList.add('sel');
+        el.querySelector('.opt-chk').textContent = '✓';
+      }
+      document.getElementById('c' + qid).classList.toggle('answered', answers[qid].length > 0);
+      document.getElementById('c' + qid).classList.remove('err');
+      updateProg();
+    }
+
+    function onTxt(qid, el) {
+      document.getElementById('cc' + qid).textContent = el.value.length + ' / 500자';
+      if (!answers[qid] || typeof answers[qid] !== 'object') answers[qid] = { text: el.value, score: 3 };
+      else answers[qid].text = el.value;
+      document.getElementById('c' + qid).classList.toggle('answered', !!el.value.trim());
+    }
+
+    function pickTxtSc(qid, sc, el) {
+      el.closest('.sc-opts').querySelectorAll('.sc-opt').forEach(o => o.classList.remove('sel'));
+      el.classList.add('sel');
+      if (!answers[qid] || typeof answers[qid] !== 'object') answers[qid] = { text: '', score: sc };
+      else answers[qid].score = sc;
+    }
+
+    function updateProg() {
+      const qs = tpl.questions || [];
+      const req = qs.filter(q => q.type === 'score' || (q.type === 'choice' && q.is_score_item) || q.type === 'multi');
+      const done = req.filter(q => {
+        const a = answers[q.id];
+        if (q.type === 'multi') return Array.isArray(a) && a.length > 0;
+        return a !== undefined && a !== null;
+      });
+      const pct = req.length ? Math.round(done.length / req.length * 100) : 0;
+      document.getElementById('prog-fill').style.width = pct + '%';
+      document.getElementById('prog-lbl').textContent = done.length + ' / ' + req.length + ' 필수 문항 완료';
+      document.getElementById('prog-pct').textContent = pct + '%';
+      document.getElementById('ans-cnt').textContent = done.length;
+      document.getElementById('sub-btn').disabled = done.length < req.length;
+    }
+
+    // ═══ 점수 환산 계산 ═══
+    function calcScore() {
+      const qs = tpl.questions || [];
+      let totalPts = 0, maxPts = 0;
+      qs.forEach(q => {
+        if (!q.is_score_item) return;
+        if (q.type === 'score') {
+          const a = answers[q.id];
+          if (a !== undefined && a !== null) totalPts += (q.score_map || [])[a] || 0;
+          maxPts += 5;
+        } else if (q.type === 'text') {
+          const a = answers[q.id];
+          totalPts += a && typeof a === 'object' ? a.score || 3 : 3;
+          maxPts += 5;
+        }
+      });
+      if (!maxPts) return 0;
+      return Math.round(totalPts / maxPts * 100);
+    }
+
+    // ═══ 데이터 제출 ═══
+    async function doSubmit() {
+      const qs = tpl.questions || [];
+      let hasErr = false;
+
+      // 미응답 유효성 검사
+      qs.forEach(q => {
+        const a = answers[q.id];
+        let missing = false;
+        if (q.type === 'score' && (a === undefined || a === null)) missing = true;
+        if (q.type === 'choice' && q.is_score_item && (a === undefined || a === null)) missing = true;
+        if (q.type === 'multi' && (!Array.isArray(a) || a.length === 0)) missing = true;
+        if (missing) {
+          document.getElementById('c' + q.id).classList.add('err');
+          hasErr = true;
+        }
+      });
+
+      if (hasErr) {
+        const first = document.querySelector('.qcard.err');
+        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      const btn = document.getElementById('sub-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:5px"></span> 제출 중...';
+      
+      const score = calcScore();
+      const { error } = await sb.from('survey_responses').insert({
+        template_id: tpl.id,
+        instructor_id: tpl.instructor_id,
+        client_company: tpl.client_company,
+        education_date: tpl.education_date,
+        answers,
+        total_score: score
+      });
+
+      if (error) {
+        alert('제출 오류가 발생했습니다: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = '제출하기 ✓';
+        return;
+      }
+
+      await updateHist(score);
+
+      // 화면 전환
+      document.getElementById('survey-screen').classList.add('hidden');
+      document.getElementById('sub-bar').style.display = 'none';
+      document.getElementById('complete').classList.remove('hidden');
+      document.getElementById('my-score').innerHTML = score + '<span class="sc-unit">점</span>';
+      window.scrollTo(0, 0);
+    }
+
+    // ═══ 교육 이력 연동 및 경고 조치 자동화 ═══
+    async function updateHist(newScore) {
+      try {
+        const { data: all } = await sb.from('survey_responses')
+          .select('total_score').eq('template_id', tpl.id);
+        if (!all?.length) return;
+
+        const sc = all.filter(r => r.total_score != null).map(r => +r.total_score);
+        const avg = sc.reduce((a, b) => a + b, 0) / sc.length;
+        const isWarn = avg <= 70;
+
+        const { data: hist } = await sb.from('instructor_education_history')
+          .select('id,warning_issued')
+          .eq('instructor_id', tpl.instructor_id)
+          .eq('education_date', tpl.education_date)
+          .eq('client_company', tpl.client_company)
+          .limit(1);
+
+        if (hist?.length) {
+          const was = hist[0].warning_issued;
+          await sb.from('instructor_education_history')
+            .update({ average_score: avg.toFixed(2), response_count: sc.length, warning_issued: isWarn })
+            .eq('id', hist[0].id);
+
+          if (isWarn && !was) {
+            await sb.from('instructor_warnings').insert({
+              instructor_id: tpl.instructor_id,
+              education_history_id: hist[0].id,
+              reason: '평균 점수 ' + avg.toFixed(1) + '점 (70점 이하 경고 대상)'
+            });
+          }
+        } else {
+          const { data: newHist } = await sb.from('instructor_education_history').insert({
+            instructor_id: tpl.instructor_id,
+            education_date: tpl.education_date,
+            client_company: tpl.client_company,
+            course_type: tpl.course_type || 'M365',
+            custom_course_name: tpl.custom_course_name || null,
+            average_score: avg.toFixed(2),
+            response_count: sc.length,
+            warning_issued: isWarn
+          }).select().single();
+
+          if (isWarn && newHist) {
+            await sb.from('instructor_warnings').insert({
+              instructor_id: tpl.instructor_id,
+              education_history_id: newHist.id,
+              reason: '평균 점수 ' + avg.toFixed(1) + '점 (70점 이하 경고 대상)'
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('History sync warning:', e);
+      }
+    }
+  </script>
+</body>
+</html>
